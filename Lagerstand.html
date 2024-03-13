@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenanzeige mit Datei-Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background: #424242;
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            color: #fff;
+        }
+        th {
+            background-color: #555;
+        }
+        tr:nth-child(even) {background-color: #393939;}
+        input[type="file"], input[type="text"] {
+            margin-top: 20px;
+            padding: 10px;
+            width: calc(100% - 20px);
+            box-sizing: border-box;
+        }
+        .lagerstand {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Datenanzeige mit Datei-Upload und Suchfunktion</h2>
+    <input type="file" id="fileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+    <input type="text" id="searchInput" placeholder="Suche...">
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Artikelnummer</th>
+                <th>Bezeichnung</th>
+                <th>Lagerstand</th>
+                <th>Einheit</th>
+                <th>D-Preis</th>
+                <th>VPE</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Datenzeilen werden hier eingefügt -->
+        </tbody>
+    </table>
+</div>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, {type: 'array'});
+        var firstSheetName = workbook.SheetNames[0];
+        var worksheet = workbook.Sheets[firstSheetName];
+        var rows = XLSX.utils.sheet_to_json(worksheet, {header:1});
+        updateTable(rows);
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+function updateTable(rows) {
+    var tbody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+    tbody.innerHTML = '';
+    rows.forEach(function(row, index) {
+        if (index === 0) return; // Kopfzeile überspringen
+        var tr = document.createElement('tr');
+        row.forEach(function(cell, cellIndex) {
+            var td = document.createElement('td');
+            td.textContent = cell;
+            if (cellIndex === 2) { // Index für Lagerstand
+                td.classList.add('lagerstand');
+            }
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    var searchValue = e.target.value.toLowerCase();
+    var rows = document.getElementById('dataTable').getElementsByTagName('tr');
+    for (var i = 1; i < rows.length; i++) {
+        var cells = rows[i].getElementsByTagName('td');
+        var found = false;
+        for (var j = 0; j < cells.length && !found; j++) {
+            if (cells[j].textContent.toLowerCase().indexOf(searchValue) > -1) {
+                found = true;
+            }
+        }
+        rows[i].style.display = found ? '' : 'none';
+    }
+});
+</script>
+</body>
+</html>
